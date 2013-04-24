@@ -1,5 +1,5 @@
 This is the fork of exclipy's fork of clang_complete with support for his clang_indexer.
-All that I did is just rebased against the latest changes from Rip-Rip's branch.
+All that I did is just rebased against the latest changes from Rip-Rip's branch and fixed one minor bug in getCurrentUsr.
 
 
 Original README:

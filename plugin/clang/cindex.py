@@ -1162,21 +1162,15 @@ class Cursor(Structure):
 
         return self._type
 
-    def get_semantic_parent(self):
-      return Cursor_semantic_parent(self)
-
     def get_lexical_parent(self):
-      return Cursor_lexical_parent(self)
-
-    def get_canonical(self):
-      return Cursor_canonical(self)
+        return conf.lib.clang_getCursorLexicalParent(self)
 
     def get_ref(self):
-      return Cursor_ref(self)
+        return conf.lib.clang_getCursorReferenced(self)
 
     @staticmethod
     def nullCursor():
-        return Cursor_null()
+        return conf.lib.clang_getNullCursor()
 
     @property
     def canonical(self):

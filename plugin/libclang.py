@@ -55,7 +55,7 @@ def getBuiltinHeaderPath(library_path):
 def initClangComplete(clang_complete_flags, clang_compilation_database, \
                       library_path):
   global index
-
+  global debug
   debug = int(vim.eval("g:clang_debug")) == 1
 
   if library_path != "":
@@ -87,8 +87,6 @@ def initClangComplete(clang_complete_flags, clang_compilation_database, \
   translationUnits = dict()
   global complete_flags
   complete_flags = int(clang_complete_flags)
-  global debug
-  debug = int(vim.eval("g:clang_debug")) == 1 
   global compilation_database
   if clang_compilation_database != '':
     compilation_database = CompilationDatabase.fromDirectory(clang_compilation_database)
@@ -506,18 +504,32 @@ def getCurrentCompletions(base):
   return (str(result), timer)
 
 def getCurrentUsr():
-  tu = getCurrentTranslationUnit(True)
-  file = tu.getFile(vim.current.buffer.name)
-  loc = tu.getLocation(file, getCurrentLine(), getCurrentColumn())
-  cursor = tu.getCursor(loc)
-  ref = None
-  while (ref is None or ref == Cursor.nullCursor()):
-    ref = cursor.get_ref()
-    nextCursor = cursor.get_lexical_parent()
-    if (nextCursor is None or cursor == nextCursor):
-      return None
-    cursor = nextCursor
-  return ref.get_usr()
+  params = getCompileParams(vim.current.buffer.name)
+  timer = CodeCompleteTimer(debug, vim.current.buffer.name, -1, -1, params)
+  line, col = vim.current.window.cursor
+
+  with libclangLock:
+    tu = getCurrentTranslationUnit(params['args'], getCurrentFile(),
+                              vim.current.buffer.name, timer, update = True)
+    if tu is None:
+      print "Couldn't get the TranslationUnit"
+      return
+
+    f = File.from_name(tu, vim.current.buffer.name)
+    loc = SourceLocation.from_position(tu, f, line, col + 1)
+    cursor = Cursor.from_location(tu, loc)
+    ref = None
+    while (ref is None or ref == Cursor.nullCursor()):
+      ref = cursor.get_ref()
+      if (not(ref is None) and ref != Cursor.nullCursor()):
+        break
+      nextCursor = cursor.get_lexical_parent()
+      if (nextCursor is None or cursor == nextCursor):
+        timer.finish()
+        return None
+      cursor = nextCursor
+    timer.finish()
+    return ref.get_usr()
 
 # searchKind is one of ["declarations", "subclasses", None]
 def getCurrentReferences(searchKind = None):
