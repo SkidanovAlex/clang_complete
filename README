@@ -1,3 +1,9 @@
+This is the fork of exclipy's fork of clang_complete with support for his clang_indexer.
+All that I did is just rebased against the latest changes from Rip-Rip's branch.
+
+
+Original README:
+
 This plugin uses clang for accurately completing C and C++ code.
 
 To build and install in one step, type:
@@ -18,3 +24,5 @@ See doc/clang_complete.txt for help and license.
 This fork is intended for use with the CLIC project, which aims to enable a "smart grep"
 through an entire project for a symbol:
 https://github.com/exclipy/clang_indexer
+
+
