@@ -528,4 +528,19 @@ function! g:ClangUpdateQuickFix()
   return ''
 endfunction
 
+
+let s:lastPattern = ''
+
+function! NavigateToSymbol(entry, dummy)
+   python vim.command('let s:lastPattern = "' + str(ExtractSymbol(vim.eval('a:entry'))) + '"')
+   python NavigateToEntry(vim.eval('a:entry'))
+endfunction
+
+function! NavigateCPP(classes)
+    exe 'pyfile ' . fnameescape(s:plugin_path) . '/update_navigation_model.py'
+    python vim.command('let s:class_list = ' + str(GetAllEntryNames(int(vim.eval('a:classes')))))
+    call fuf#callbackitem#launch(s:lastPattern, 1, 'navigate C++>', {'onComplete': function('NavigateToSymbol')}, s:class_list, 0)
+endfunction
+
+
 " vim: set ts=2 sts=2 sw=2 expandtab :
