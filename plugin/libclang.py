@@ -531,6 +531,35 @@ def getCurrentUsr():
     timer.finish()
     return ref.get_usr()
 
+def getCurrentScopeStrInternal(cursor, pos):
+    for ch in cursor.get_children():
+        if ch.extent.start.line <= pos and ch.extent.end.line >= pos and str(ch.extent.end.file) == str(cursor.extent.end.file):
+            ret = ''
+            if ch.spelling is not None: 
+              ret = ch.spelling
+            other = getCurrentScopeStrInternal(ch, pos)
+            if '' != other:
+              if ret != '': ret += '::'
+              ret += other
+            if '' != ret:
+              return ret
+    return ''
+
+
+def getCurrentScopeStr(updateCode):
+  params = getCompileParams(vim.current.buffer.name)
+  timer = CodeCompleteTimer(debug, vim.current.buffer.name, -1, -1, params)
+  line, col = vim.current.window.cursor
+
+  with libclangLock:
+    tu = getCurrentTranslationUnit(params['args'], getCurrentFile(),
+                              vim.current.buffer.name, timer, update = updateCode)
+    if tu is None:
+      print "Couldn't get the TranslationUnit"
+      return
+
+    return getCurrentScopeStrInternal(tu.cursor, line)
+
 # searchKind is one of ["declarations", "subclasses", None]
 def getCurrentReferences(searchKind = None):
   def loadClic():

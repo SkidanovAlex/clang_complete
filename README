@@ -1,7 +1,7 @@
 This is the fork of exclipy's fork of clang_complete with support for his clang_indexer.
 I rebased against the latest changes from Rip-Rip's branch and fixed one minor bug in getCurrentUsr.
 
-I also added a feature to navigate the source code with FuzzyFinder. I split feature into two: one will only navigate through classes, and another navigates through all the symbols. The reason for that is that in a reasonably big codebase (like the one I use) number of all the symbols might be very high, and fuzzy finder takes a while to prepare the popup (up to 4 seconds). With my use case number of classes was reasonably small for fuzzy finder to process it in subsecond (I would still prefer something more instanteneous, but FuzzyFinder API was the fastest way to achieve what I needed), and navigating to a class is way more common scenario than navigating to a method or a function.
+ - Added a feature to navigate the source code with FuzzyFinder. I split feature into two: one will only navigate through classes, and another navigates through all the symbols. The reason for that is that in a reasonably big codebase (like the one I use) number of all the symbols might be very high, and fuzzy finder takes a while to prepare the popup (up to 4 seconds). With my use case number of classes was reasonably small for fuzzy finder to process it in subsecond (I would still prefer something more instanteneous, but FuzzyFinder API was the fastest way to achieve what I needed), and navigating to a class is way more common scenario than navigating to a method or a function.
 Here's an example from my .vimrc, w will open fuzzy finder for classes, and W will open it for everything.
 
   nnoremap w :call NavigateCPP(1)<CR>
@@ -9,6 +9,19 @@ Here's an example from my .vimrc, w will open fuzzy finder for classes, and W wi
 
 This fucntionality requires fuzzy finder:
 http://www.vim.org/scripts/script.php?script_id=1984
+
+ - Added a feature to show current class and function name (the one the cursor is at) in the status bar. It parses the file and fetches it when user is inactive, by default after 2 seconds after the last time cursor was moved.
+To enable it, one needs to add something along this lines to his .vimrc:
+
+  let g:clang_periodic_update_scope=1
+
+  set laststatus=2
+  set statusline=\ %{GetCurrentScope()}\ \ %F%m%r%h\ %w%=%l:%c
+
+First line indicates that you want to update the scope when you are not acitve. Next two lines is an example of a status bar with current class / function name and current file name.
+The very first time the scope is updated could take up to a second or more, because the file needs to be reparsed. Same happens every time you change the file -- first time the scope is updated after a change might take more than a second. If you just navigate the file, without changing it, updating the scope should be pretty fast. It will still take `updatetime` milliseconds (2000 by default) before the scope is updated in the status bar after you have stopped moving the cursor.
+ 
+
 
 
 Original README:

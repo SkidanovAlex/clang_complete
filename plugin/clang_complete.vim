@@ -12,6 +12,8 @@ au FileType c,cpp,objc,objcpp call <SID>ClangCompleteInit()
 let b:clang_parameters = ''
 let b:clang_user_options = ''
 let b:my_changedtick = 0
+let b:my_scope_changedtick = 0
+let b:current_scope = ''
 
 " Store plugin path, as this is available only when sourcing the file,
 " not during a function call.
@@ -51,6 +53,10 @@ function! s:ClangCompleteInit()
 
   if !exists('g:clang_periodic_quickfix')
     let g:clang_periodic_quickfix = 0
+  endif
+
+  if !exists('g:clang_periodic_update_scope')
+    let g:clang_periodic_update_scope = 0
   endif
 
   if !exists('g:clang_snippets') || g:clang_snippets == 0
@@ -118,6 +124,8 @@ function! s:ClangCompleteInit()
   call LoadUserOptions()
 
   let b:my_changedtick = b:changedtick
+  let b:my_scope_changedtick = b:changedtick
+  let b:current_scope = ''
   let b:clang_parameters = '-x c'
 
   if &filetype =~ 'objc'
@@ -171,6 +179,12 @@ function! s:ClangCompleteInit()
   if g:clang_periodic_quickfix == 1
     augroup ClangComplete
       au CursorHold,CursorHoldI <buffer> call <SID>DoPeriodicQuickFix()
+    augroup end
+  endif
+
+  if g:clang_periodic_update_scope == 1
+    augroup ClangComplete
+      au CursorHold,CursorHoldI <buffer> call <SID>DoUpdateCurrentScope()
     augroup end
   endif
 
@@ -291,6 +305,17 @@ function! s:initClangCompletePython()
   endif
   python WarmupCache()
   return 1
+endfunction
+
+function! s:DoUpdateCurrentScope()
+  " Don't do any superfluous reparsing.
+  let l:changed = 1
+  if b:my_scope_changedtick == b:changedtick
+    let l:changed = 0
+  endif
+  let b:my_scope_changedtick = b:changedtick
+
+  python vim.command('let b:current_scope = "' + getCurrentScopeStr('1' == vim.eval('l:changed')) + '"')
 endfunction
 
 function! s:DoPeriodicQuickFix()
@@ -541,6 +566,15 @@ function! NavigateCPP(classes)
     python vim.command('let s:class_list = ' + str(GetAllEntryNames(int(vim.eval('a:classes')))))
     call fuf#callbackitem#launch(s:lastPattern, 1, 'navigate C++>', {'onComplete': function('NavigateToSymbol')}, s:class_list, 0)
 endfunction
+
+function! GetCurrentScope()
+  if !exists('b:current_scope')
+    return ''
+  endif
+  return b:current_scope
+endfunction
+
+
 
 
 " vim: set ts=2 sts=2 sw=2 expandtab :
